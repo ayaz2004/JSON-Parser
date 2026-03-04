@@ -129,30 +129,6 @@ Click "Parse Document" and watch the AI extract, understand, and format your dat
 └── types/                  # TypeScript definitions
 ```
 
-## 🚀 Deploy to Production
-
-### Deploy to Vercel (Recommended)
-
-**One-Click Deploy:**
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=YOUR_GITHUB_URL)
-
-**Or via CLI:**
-
-```bash
-npm i -g vercel
-vercel
-```
-
-**That's it!** No environment variables to configure. Users enter their own API keys in the UI.
-
-### Why Vercel?
-
-- ✅ Zero configuration deployment
-- ✅ Automatic HTTPS and SSL
-- ✅ Global CDN for fast loading
-- ✅ Generous free tier
-- ✅ Instant preview deployments
 
 ## 📚 Additional Resources
 
@@ -162,8 +138,6 @@ vercel
 - [Anthropic Console](https://console.anthropic.com/) - Claude (pay-as-you-go)
 - [Groq Console](https://console.groq.com/) - Fast inference (FREE) - [Ollama](https://ollama.ai/) - Run models locally (FREE)
 
-### Documentation
-- **[API.md](./API.md)** - Complete API documentation and integration guide
 
 ## 🤝 Contributing
 
@@ -183,7 +157,7 @@ MIT License - Feel free to use this in your own projects!
 
 ---
 
-**Built with ❤️ for the AI community**MIT
+**Built with ❤️ for the AI community**
 
 ## Support
 
