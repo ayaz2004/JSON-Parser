@@ -1,8 +1,7 @@
 import { ParsedDocument } from '@/types';
 import { parsePDF } from './pdf-parser';
 import { parseDOC } from './doc-parser';
-import { parseImage } from './image-parser';
-import { parsePDFWithOCR } from './pdf-ocr';
+
 
 export async function parseDocument(
   file: Buffer,
