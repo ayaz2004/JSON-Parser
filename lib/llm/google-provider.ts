@@ -62,12 +62,12 @@ Rules:
           maxOutputTokens: config.maxTokens || 16384,
         },
         safetySettings: [
-          { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-          { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
-          { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
-          { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-        ] as SafetySetting[],
-      });
+          { category: HarmCategory.HARM_CATEGORY_HARASSMENT as any, threshold: HarmBlockThreshold.BLOCK_NONE as any },
+          { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH as any, threshold: HarmBlockThreshold.BLOCK_NONE as any },
+          { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT as any, threshold: HarmBlockThreshold.BLOCK_NONE as any },
+          { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT as any, threshold: HarmBlockThreshold.BLOCK_NONE as any },
+        ],
+      } as any);
       
       const response = await result.response;
       const responseText = response.text();
