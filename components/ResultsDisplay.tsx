@@ -4,9 +4,10 @@ import { useState } from 'react';
 
 interface ResultsDisplayProps {
   result: any;
+  fileName?: string;
 }
 
-export default function ResultsDisplay({ result }: ResultsDisplayProps) {
+export default function ResultsDisplay({ result, fileName }: ResultsDisplayProps) {
   const [copied, setCopied] = useState(false);
 
   const jsonString = JSON.stringify(result.data || result, null, 2);
@@ -22,7 +23,7 @@ export default function ResultsDisplay({ result }: ResultsDisplayProps) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `extracted-data-${Date.now()}.json`;
+    a.download = `extracted-${fileName || 'data'}-${Date.now()}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -36,7 +37,7 @@ export default function ResultsDisplay({ result }: ResultsDisplayProps) {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-slate-100 mb-1">
-            ✨ Extraction Complete
+            ✨ {fileName ? fileName : 'Extraction Complete'}
           </h2>
           {Array.isArray(data) && (
             <p className="text-sm text-slate-300">

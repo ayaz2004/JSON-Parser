@@ -9,7 +9,7 @@ import { LLMConfig } from '@/types';
 import { Loader2 } from 'lucide-react';
 
 export default function Home() {
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [schema, setSchema] = useState<string>('');
   const [llmConfig, setLlmConfig] = useState<LLMConfig>({
     provider: 'google',
@@ -18,7 +18,8 @@ export default function Home() {
     maxTokens: 16384,
   });
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [results, setResults] = useState<any[]>([]);
   const [error, setError] = useState<string>('');
 
   // Determine if current provider supports vision
@@ -33,11 +34,11 @@ export default function Home() {
 
   const handleParse = async () => {
     setError('');
-    setResult(null);
+    setResults([]);
 
     // Validation
-    if (!file) {
-      setError('❌ Please upload a document file (PDF, DOC, or Image)');
+    if (files.length === 0) {
+      setError('❌ Please upload at least one document file (PDF, DOC, or Image)');
       return;
     }
 
@@ -61,46 +62,59 @@ export default function Home() {
     }
 
     setLoading(true);
+    setProgress({ current: 0, total: files.length });
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('schema', schema);
-      formData.append('llmConfig', JSON.stringify(llmConfig));
+      const allResults: any[] = [];
 
-      const response = await fetch('/api/parse', {
-        method: 'POST',
-        body: formData,
-      });
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        setProgress({ current: i + 1, total: files.length });
 
-      const data = await response.json();
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('schema', schema);
+          formData.append('llmConfig', JSON.stringify(llmConfig));
 
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to parse document');
+          const response = await fetch('/api/parse', {
+            method: 'POST',
+            body: formData,
+          });
+
+          const data = await response.json();
+
+          if (!data.success) {
+            allResults.push({ fileName: file.name, error: data.error || 'Failed to parse document' });
+          } else {
+            allResults.push({ fileName: file.name, data: data.data });
+          }
+        } catch (err) {
+          allResults.push({ fileName: file.name, error: err instanceof Error ? err.message : 'Unknown error' });
+        }
+
+        // Show results as they come in
+        setResults([...allResults]);
+      }
+      
+      const errors = allResults.filter(r => r.error);
+      if (errors.length > 0 && errors.length === allResults.length) {
+        throw new Error(errors.map(e => `${e.fileName}: ${e.error}`).join('\n'));
       }
 
-      setResult(data.data);
+      if (errors.length > 0) {
+        setError(`⚠️ Some files failed:\n${errors.map(e => `• ${e.fileName}: ${e.error}`).join('\n')}`);
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred';
       setError(`❌ ${errorMessage}`);
       console.error('Parse error details:', err);
-      
-      // Log detailed information for debugging
-      console.log('Request details:', {
-        hasFile: !!file,
-        fileName: file?.name,
-        fileType: file?.type,
-        hasSchema: !!schema,
-        schemaLength: schema?.length,
-        provider: llmConfig.provider,
-        hasApiKey: !!llmConfig.apiKey
-      });
     } finally {
       setLoading(false);
     }
   };
 
-  const canProcess = file && schema && (llmConfig.provider === 'ollama' || llmConfig.apiKey);
+  const canProcess = files.length > 0 && schema && (llmConfig.provider === 'ollama' || llmConfig.apiKey);
 
   return (
     <main className="min-h-screen bg-slate-900">
@@ -141,7 +155,7 @@ export default function Home() {
                   </span>
                   Upload Document
                 </h2>
-                <FileUpload file={file} onFileSelect={setFile} hasVision={hasVision} />
+                <FileUpload files={files} onFilesChange={setFiles} hasVision={hasVision} />
               </div>
 
               <div>
@@ -224,14 +238,14 @@ export default function Home() {
                 {loading ? (
                   <>
                     <Loader2 className="w-6 h-6 mr-3 animate-spin" />
-                    Processing Document...
+                    Processing {progress.current}/{progress.total}...
                   </>
                 ) : (
                   <>
                     <svg className="w-6 h-6 mr-3 group-hover:rotate-12 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
-                    Parse Document with AI
+                    Parse {files.length > 1 ? `${files.length} Documents` : 'Document'} with AI
                   </>
                 )}
               </div>
@@ -240,9 +254,9 @@ export default function Home() {
             {!canProcess && !loading && (
               <div className="mt-4 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg">
                 <p className="text-sm text-slate-400 text-center">
-                  {!file && '👆 Upload a file to get started'}
-                  {file && !schema && '👆 Define your JSON schema'}
-                  {file && schema && llmConfig.provider !== 'ollama' && !llmConfig.apiKey && '👆 Add your API key'}
+                  {files.length === 0 && '👆 Upload files to get started'}
+                  {files.length > 0 && !schema && '👆 Define your JSON schema'}
+                  {files.length > 0 && schema && llmConfig.provider !== 'ollama' && !llmConfig.apiKey && '👆 Add your API key'}
                 </p>
               </div>
             )}
@@ -308,9 +322,19 @@ export default function Home() {
         </div>
 
         {/* Results */}
-        {result && (
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-xl p-8">
-            <ResultsDisplay result={result} />
+        {results.length > 0 && (
+          <div className="space-y-6">
+            {results.map((res, index) => (
+              <div key={index} className="bg-slate-800 border border-slate-700 rounded-2xl shadow-xl p-8">
+                {res.error ? (
+                  <div className="text-red-400 text-sm">
+                    <span className="font-semibold">{res.fileName}:</span> {res.error}
+                  </div>
+                ) : (
+                  <ResultsDisplay result={res} fileName={res.fileName} />
+                )}
+              </div>
+            ))}
           </div>
         )}
 

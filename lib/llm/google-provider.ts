@@ -42,7 +42,7 @@ Rules:
       const mimeType = this.detectMimeType(imageBuffer);
       const base64Image = imageBuffer.toString('base64');
       
-      const result = await model.generateContent({
+      const request = {
         contents: [
           {
             role: 'user',
@@ -61,14 +61,33 @@ Rules:
           temperature: config.temperature || 0.3,
           maxOutputTokens: config.maxTokens || 16384,
         },
-      } as any);
-      
-      const response = await result.response;
-      const responseText = response.text();
-      console.log('Gemini response length:', responseText.length, 'chars');
-      console.log('Gemini response preview:', responseText.substring(0, 300));
-      console.log('Gemini response ending:', responseText.substring(Math.max(0, responseText.length - 100)));
-      return responseText;
+      };
+
+      // Retry up to 3 times on rate limit errors
+      let lastError: any;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const result = await model.generateContent(request as any);
+          const response = await result.response;
+          const responseText = response.text();
+          console.log('Gemini response length:', responseText.length, 'chars');
+          console.log('Gemini response preview:', responseText.substring(0, 300));
+          console.log('Gemini response ending:', responseText.substring(Math.max(0, responseText.length - 100)));
+          return responseText;
+        } catch (err: any) {
+          lastError = err;
+          const msg = err?.message || '';
+          if (msg.includes('429') || msg.includes('Too Many Requests') || msg.includes('quota')) {
+            const delayMatch = msg.match(/retry in (\d+(?:\.\d+)?)s/i);
+            const delay = delayMatch ? Math.ceil(parseFloat(delayMatch[1])) * 1000 + 1000 : 15000;
+            console.log(`Rate limited, retrying in ${delay / 1000}s (attempt ${attempt + 1}/3)...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          }
+          throw err;
+        }
+      }
+      throw lastError;
     } catch (error: any) {
       // Provide helpful error message
       let errorMsg = error?.message || 'Unknown error';
