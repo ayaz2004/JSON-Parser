@@ -1,6 +1,6 @@
 import { LLMConfig } from '@/types';
 import { BaseLLMProvider } from './base-provider';
-import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
+import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold, SafetySetting } from '@google/generative-ai';
 
 export class GoogleProvider extends BaseLLMProvider {
   name = 'Google';
@@ -42,6 +42,13 @@ Rules:
       const mimeType = this.detectMimeType(imageBuffer);
       const base64Image = imageBuffer.toString('base64');
       
+      const safetySettings: SafetySetting[] = [
+        { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+        { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+        { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+        { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+      ];
+
       const result = await model.generateContent({
         contents: [
           {
@@ -61,12 +68,7 @@ Rules:
           temperature: config.temperature || 0.3,
           maxOutputTokens: config.maxTokens || 16384,
         },
-        safetySettings: [
-          { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-          { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
-          { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
-          { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-        ],
+        safetySettings,
       });
       
       const response = await result.response;
