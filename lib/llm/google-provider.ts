@@ -1,6 +1,6 @@
 import { LLMConfig } from '@/types';
 import { BaseLLMProvider } from './base-provider';
-import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold, SafetySetting } from '@google/generative-ai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export class GoogleProvider extends BaseLLMProvider {
   name = 'Google';
@@ -61,12 +61,6 @@ Rules:
           temperature: config.temperature || 0.3,
           maxOutputTokens: config.maxTokens || 16384,
         },
-        safetySettings: [
-          { category: HarmCategory.HARM_CATEGORY_HARASSMENT as any, threshold: HarmBlockThreshold.BLOCK_NONE as any },
-          { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH as any, threshold: HarmBlockThreshold.BLOCK_NONE as any },
-          { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT as any, threshold: HarmBlockThreshold.BLOCK_NONE as any },
-          { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT as any, threshold: HarmBlockThreshold.BLOCK_NONE as any },
-        ],
       } as any);
       
       const response = await result.response;
